@@ -1,6 +1,21 @@
 class Classe {
   constructor() {}
 
+  /**
+   * No artigo ele usa "99999" como distancia. Aqui, por algum motivo, ao usar isso,
+   * o ultimo ponto (8 -> origem) estora a dist;
+   */
+  // public distanceMatrix: number[][] = [
+  //   [0, 2, 11, 10, 8, 7, 6, 0],
+  //   [6, 0, 1, 8, 8, 4, 6, 6],
+  //   [5, 12, 0, 11, 8, 12, 3, 5],
+  //   [11, 9, 10, 0, 1, 9, 8, 11],
+  //   [11, 11, 9, 4, 0, 2, 10, 11],
+  //   [12, 8, 5, 2, 11, 0, 11, 12],
+  //   [10, 11, 12, 10, 9, 12, 0, 10],
+  //   [0, 2, 11, 10, 8, 7, 6, 0],
+  // ];
+
   public distanceMatrix: number[][] = [
     [99999, 2, 11, 10, 8, 7, 6, 99999],
     [6, 99999, 1, 8, 8, 4, 6, 6],
@@ -114,6 +129,10 @@ class Classe {
     return newRoute;
   }
 
+  /**
+   * O problema aqui é o ultimo nó, que vai pegar index 7 ao 0;
+   * Na array, isso é 9999
+   */
   public calculateRouteDistance(route: number[]): number {
     let distance = 0;
     for (let i = 0; i < route.length - 1; i++) {
@@ -125,6 +144,18 @@ class Classe {
     const lastCity = route[route.length - 1] - 1;
     const firstCity = route[0] - 1;
     distance += this.distanceMatrix[lastCity][firstCity]; // Volta ao depósito
+    return distance;
+  }
+
+  public tamanhoDaRotaSemRetornoAoDeposito(route: number[]): number {
+    let distance = 0;
+    for (let i = 0; i < route.length - 1; i++) {
+      const city1 = route[i] - 1;
+      const city2 = route[i + 1] - 1;
+
+      distance += this.distanceMatrix[city1][city2];
+    }
+
     return distance;
   }
 
@@ -172,30 +203,38 @@ class Classe {
     const n = parent1.route.length - 1; // Total de cidades (excluindo o depósito)
     const offspringRoute: number[] = [1]; // Inicia com o depósito (cidade 1)
 
-    let p = 1; // Cidade atual, começa no depósito
-
-    for (let i = 2; i <= n; i++) {
+    for (let i = 1; i <= n; i++) {
       const parent1NextCityIndex =
         parent1.route.indexOf(offspringRoute[offspringRoute.length - 1]) + 1;
       const parent2NextCityIndex =
         parent2.route.indexOf(offspringRoute[offspringRoute.length - 1]) + 1;
 
-      // const parent1NextCity = parent1.route[parent1NextCityIndex];
-      // const parent2NextCity = parent2.route[parent2NextCityIndex];
-
       let selectedCity;
 
-      const parent1NextCity =
+      let parent1NextCity =
         parent1NextCityIndex < parent1.route.length
           ? parent1.route[parent1NextCityIndex]
           : undefined;
-      const parent2NextCity =
+
+      let parent2NextCity =
         parent2NextCityIndex < parent2.route.length
           ? parent2.route[parent2NextCityIndex]
           : undefined;
 
-      if (!parent2NextCity || offspringRoute.includes(parent2NextCity)) {
-        selectedCity = this.findClosestCity(i, parent2.route, offspringRoute);
+      selectedCity = parent1NextCity || parent2NextCity;
+
+      if (!parent1NextCity || offspringRoute.includes(parent2NextCity)) {
+        parent1NextCity = this.findClosestCity(
+          i,
+          parent1.route,
+          offspringRoute
+        );
+      } else if (!parent2NextCity || offspringRoute.includes(parent2NextCity)) {
+        parent2NextCity = this.findClosestCity(
+          i,
+          parent2.route,
+          offspringRoute
+        );
       } else {
         // Ambos os pais têm a cidade, selecionamos o mais próximo
         const distanceFromParent1 =
@@ -212,25 +251,6 @@ class Classe {
             ? parent1NextCity
             : parent2NextCity;
       }
-      // if (
-      //   parent1NextCityIndex < parent1.route.length &&
-      //   !offspringRoute.includes(parent1NextCity)
-      // ) {
-      //   selectedCity = parent1NextCity;
-      // } else if (
-      //   parent2NextCityIndex < parent2.route.length &&
-      //   !offspringRoute.includes(parent2NextCity)
-      // ) {
-      //   selectedCity = parent2NextCity;
-      // } else {
-      //   // Nenhuma cidade legítima é encontrada no pai atual, então examinamos desde o início do pai
-      //   for (let j = 1; j < parent1.route.length; j++) {
-      //     if (!offspringRoute.includes(parent1.route[j])) {
-      //       selectedCity = parent1.route[j];
-      //       break;
-      //     }
-      //   }
-      // }
 
       if (selectedCity) {
         const distanceFromParent1 =
@@ -248,17 +268,14 @@ class Classe {
           offspringRoute.push(parent2NextCity);
         }
 
-        const newRouteDistance = this.calculateRouteDistance(offspringRoute);
+        const newRouteDistance =
+          this.tamanhoDaRotaSemRetornoAoDeposito(offspringRoute);
+
         if (newRouteDistance > Dmax) {
           offspringRoute.pop(); // Remove a última cidade adicionada
           offspringRoute.push(1); // Adiciona o depósito como cidade "fictícia"
         }
       }
-
-      p = offspringRoute[offspringRoute.length - 1]; // Atualiza a cidade atual
-
-      console.log({ offspringRoute });
-      console.log({ p });
     }
 
     return new Chromosome(
@@ -297,7 +314,7 @@ class Chromosome {
   }
 }
 
-const n = 7; // Total number of cities (sem depósito)
+const n = 8; // Total number of cities (sem depósito)
 const Dmax = 60; // Maximum distance allowed for each route
 const populationSize = 10; // Size of the population
 
