@@ -1,161 +1,184 @@
 class Classe {
   constructor() {
+    /**
+     * No artigo ele usa "99999" como distancia. Aqui, por algum motivo, ao usar isso,
+     * o ultimo ponto (8 -> origem) estora a dist;
+     */
+    // public distanceMatrix: number[][] = [
+    //   [0, 2, 11, 10, 8, 7, 6, 0],
+    //   [6, 0, 1, 8, 8, 4, 6, 6],
+    //   [5, 12, 0, 11, 8, 12, 3, 5],
+    //   [11, 9, 10, 0, 1, 9, 8, 11],
+    //   [11, 11, 9, 4, 0, 2, 10, 11],
+    //   [12, 8, 5, 2, 11, 0, 11, 12],
+    //   [10, 11, 12, 10, 9, 12, 0, 10],
+    //   [0, 2, 11, 10, 8, 7, 6, 0],
+    // ];
     this.distanceMatrix = [
-      [99999, 2, 11, 10, 8, 7, 6, 99999],
-      [6, 99999, 1, 8, 8, 4, 6, 6],
-      [5, 12, 99999, 11, 8, 12, 3, 5],
-      [11, 9, 10, 99999, 1, 9, 8, 11],
-      [11, 11, 9, 4, 99999, 2, 10, 11],
-      [12, 8, 5, 2, 11, 99999, 11, 12],
-      [10, 11, 12, 10, 9, 12, 99999, 10],
-      [99999, 2, 11, 10, 8, 7, 6, 99999],
+      [99999, 2, 11, 10, 8, 7, 6],
+      [6, 99999, 1, 8, 8, 4, 6],
+      [5, 12, 99999, 11, 8, 12, 3],
+      [11, 9, 10, 99999, 1, 9, 8],
+      [11, 11, 9, 4, 99999, 2, 10],
+      [12, 8, 5, 2, 11, 99999, 11],
+      [10, 11, 12, 10, 9, 12, 99999],
     ];
     this.numberOfVehicles = 2;
     this.numberOfCities = 7;
     this.maxDistance = 60;
   }
-  // ALGORITHM 1
-  generatePopulation(n, Dmax, Ps) {
+  gerarPopulacoes(numeroDeCidades, Dmax, Ps, distanceMatrix, numeroDeVeiculos) {
     const population = [];
+    let dummyCity = numeroDeCidades + 1; // Inicia o valor da "dummy city" com o próximo número após o número de clientes (n)
     for (let i = 0; i < Ps; i++) {
-      const firstCity = 1;
-      const currentChromosome = {
-        route: [firstCity],
-        distance: 0,
-      };
-      const remainingCities = [];
-      for (let j = 2; j <= n; j++) {
-        remainingCities.push(j);
-      }
-      let p = firstCity;
-      for (let j = 2; j <= n; j++) {
-        const randomIndex = Math.floor(Math.random() * remainingCities.length);
-        const q = remainingCities[randomIndex];
-        const distanceToQ = this.calculateDistance(p, q); // Replace 'calculateDistance' with your distance calculation function
-        if (currentChromosome.distance + distanceToQ <= Dmax) {
-          currentChromosome.route.push(q);
-          currentChromosome.distance += distanceToQ;
-          remainingCities.splice(randomIndex, 1); // Remove the selected city from the remaining cities list
+      const route = [1]; // Inicia com o depósito (cidade 1)
+      let currentCapacity = Dmax;
+      const remainingCities = Array.from(
+        { length: numeroDeCidades },
+        (_, i) => i + 1
+      );
+
+      for (let j = 2; j <= numeroDeCidades; j++) {
+        const idx = Math.floor(Math.random() * remainingCities.length);
+        const selectedCity = remainingCities[idx];
+
+        const distanceToSelectedCity =
+          distanceMatrix[route[route.length - 1] - 1][selectedCity - 1];
+
+        if (distanceToSelectedCity <= currentCapacity) {
+          route.push(selectedCity);
+          currentCapacity -= distanceToSelectedCity;
         } else {
-          currentChromosome.route.push(firstCity); // Add a dummy depot (city q)
-          currentChromosome.distance += this.calculateDistance(p, firstCity); // Distance from last city to the depot
-          p = q; // Set city q as the new current city
-        }
-      }
-      population.push(currentChromosome);
-    }
-    // this.improvePopulation(population); // Apply 2-opt local search to improve the population
-    return population;
-  }
-  calculateDistance(city1, city2) {
-    if (city1 === city2) {
-      return 0; // A distância da cidade para ela mesma é 0
-    }
-    // Lembrando que os índices da matriz começam em 0, enquanto as cidades começam em 1
-    const index1 = city1 - 1;
-    const index2 = city2 - 1;
-    // Acessamos a distância entre as duas cidades através da matriz de distâncias
-    return this.distanceMatrix[index1][index2];
-  }
-  improvePopulation(population) {
-    for (let i = 0; i < population.length; i++) {
-      population[i] = this.twoOptLocalSearch(population[i]);
-    }
-    return population;
-  }
-  twoOptLocalSearch(chromosome) {
-    let improvement = true;
-    while (improvement) {
-      improvement = false;
-      for (let i = 0; i < chromosome.route.length - 1; i++) {
-        for (let j = i + 1; j < chromosome.route.length; j++) {
-          const newRoute = this.twoOptSwap(chromosome.route, i, j);
-          const newDistance = this.calculateRouteDistance(newRoute);
-          if (newDistance < chromosome.distance) {
-            chromosome.route = newRoute;
-            chromosome.distance = newDistance;
-            improvement = true;
+          // Adiciona a "dummy city" como cidade fictícia (valor crescente)
+          if (numeroDeCidades + numeroDeVeiculos > dummyCity) {
+            route.push(dummyCity);
+            dummyCity++;
+            currentCapacity = Dmax - distanceToSelectedCity;
+            route.push(selectedCity);
+          } else {
+            console.log("ih marquinhos");
           }
         }
+
+        remainingCities.splice(idx, 1);
+      }
+      // Volta para o depósito ao final da rota
+      route.push(1);
+      population.push(
+        new Chromosome(
+          route,
+          this.calcularRotaAoGerarPopulacao(
+            route,
+            distanceMatrix,
+            numeroDeCidades
+          )
+        )
+      );
+    }
+    return population;
+  }
+  // Usar esse processo pra combinar tamanho da rota e numero de veículos
+  aumentarMatriz(matrix, n) {
+    if (matrix.length === 0 || matrix[0].length === 0 || n <= 0) {
+      return matrix;
+    }
+    const numRows = matrix.length;
+    // Replicar a primeira coluna "n" vezes e adicionar ao final da matriz
+    for (let i = 0; i < numRows; i++) {
+      for (let j = 0; j < n; j++) {
+        matrix[i].push(matrix[i][0]);
       }
     }
-    return chromosome;
-  }
-  twoOptSwap(route, i, j) {
-    const newRoute = route.slice(0, i);
-    for (let k = j; k >= i; k--) {
-      newRoute.push(route[k]);
+    // Replicar a primeira linha "n" vezes e adicionar ao final da matriz
+    for (let i = 0; i < n; i++) {
+      const firstRowCopy = matrix[0].slice();
+      matrix.push(firstRowCopy);
     }
-    for (let k = j + 1; k < route.length; k++) {
-      newRoute.push(route[k]);
-    }
-    return newRoute;
+    return matrix;
   }
-  calculateRouteDistance(route) {
+  calculateRouteDistanceGepeto(route, distanceMatrix) {
+    let distance = 0;
+    for (let i = 0; i < route.length - 1; i++) {
+      const city1 = route[i] - 1;
+      const city2 = route[i + 1] - 1;
+      distance += distanceMatrix[city1][city2];
+    }
+    const lastCity = route[route.length - 1] - 1;
+    const firstCity = route[0] - 1;
+    distance += distanceMatrix[lastCity][firstCity]; // Volta ao depósito
+    return distance;
+  }
+  /**
+   * O problema aqui é o ultimo nó, que vai pegar index 7 ao 0;
+   * Na array, isso é 9999
+   */
+  calcularRotaAoGerarPopulacao(route, distanceMatrix, numeroDeCidades) {
+    let distance = 0;
+    for (let i = 0; i < route.length - 1; i++) {
+      const city1 = route[i] - 1;
+      const city2 = route[i + 1] - 1;
+      if (city1 < numeroDeCidades && city2 < numeroDeCidades)
+        distance += distanceMatrix[city1][city2];
+    }
+    const lastCity = route[route.length - 1] - 1;
+    const firstCity = route[0] - 1;
+    distance += distanceMatrix[lastCity][firstCity]; // Volta ao depósito
+    return distance;
+  }
+  tamanhoDaRotaSemRetornoAoDeposito(route) {
     let distance = 0;
     for (let i = 0; i < route.length - 1; i++) {
       const city1 = route[i] - 1;
       const city2 = route[i + 1] - 1;
       distance += this.distanceMatrix[city1][city2];
     }
-    const lastCity = route[route.length - 1] - 1;
-    const firstCity = route[0] - 1;
-    distance += this.distanceMatrix[lastCity][firstCity]; // Volta ao depósito
     return distance;
   }
-  selectParents(Ps, population) {
-    const totalFitness = population.reduce(
-      (sum, chromosome) => sum + 1 / chromosome.distance,
-      0
-    );
-    const probabilities = population.map(
-      (chromosome) => 1 / chromosome.distance / totalFitness
-    );
-    const cumulativeProbabilities = probabilities.reduce(
-      (acc, probability, index) =>
-        acc.concat(index === 0 ? probability : acc[index - 1] + probability),
-      []
-    );
-    const newPopulation = [];
-    for (let i = 0; i < Ps; i++) {
-      const r = Math.random();
-      for (let j = 0; j < cumulativeProbabilities.length; j++) {
-        if (j === 0 && r <= cumulativeProbabilities[j]) {
-          newPopulation.push(Object.assign({}, population[j]));
-          break;
-        } else if (
-          r > cumulativeProbabilities[j - 1] &&
-          r <= cumulativeProbabilities[j]
-        ) {
-          newPopulation.push(Object.assign({}, population[j]));
-          break;
-        }
+  acharCidadeSubstituta(currentCity, routes, offspringRoute) {
+    let closestCity;
+    let minDistance = Number.MAX_VALUE;
+    for (const city of routes) {
+      const distance = this.distanceMatrix[currentCity - 1][city - 1];
+      if (distance < minDistance && !offspringRoute.includes(city)) {
+        minDistance = distance;
+        closestCity = city;
       }
     }
-    return newPopulation;
+    return closestCity;
   }
-  generateOffspring(Dmax, parent1, parent2) {
+  /**
+   * 👌
+   */
+  gerarFilhos(Dmax, parent1, parent2) {
     const n = parent1.route.length - 1; // Total de cidades (excluindo o depósito)
     const offspringRoute = [1]; // Inicia com o depósito (cidade 1)
-    let p = 1; // Cidade atual, começa no depósito
     for (let i = 2; i <= n; i++) {
       const parent1NextCityIndex =
         parent1.route.indexOf(offspringRoute[offspringRoute.length - 1]) + 1;
       const parent2NextCityIndex =
         parent2.route.indexOf(offspringRoute[offspringRoute.length - 1]) + 1;
-      // const parent1NextCity = parent1.route[parent1NextCityIndex];
-      // const parent2NextCity = parent2.route[parent2NextCityIndex];
       let selectedCity;
-      const parent1NextCity =
+      let parent1NextCity =
         parent1NextCityIndex < parent1.route.length
           ? parent1.route[parent1NextCityIndex]
           : undefined;
-      const parent2NextCity =
+      let parent2NextCity =
         parent2NextCityIndex < parent2.route.length
           ? parent2.route[parent2NextCityIndex]
           : undefined;
-      if (!parent2NextCity || offspringRoute.includes(parent2NextCity)) {
-        selectedCity = this.findClosestCity(i, parent2.route, offspringRoute);
+      selectedCity = parent1NextCity || parent2NextCity;
+      if (!parent1NextCity || offspringRoute.includes(parent2NextCity)) {
+        parent1NextCity = this.acharCidadeSubstituta(
+          i,
+          parent1.route,
+          offspringRoute
+        );
+      } else if (!parent2NextCity || offspringRoute.includes(parent2NextCity)) {
+        parent2NextCity = this.acharCidadeSubstituta(
+          i,
+          parent2.route,
+          offspringRoute
+        );
       } else {
         // Ambos os pais têm a cidade, selecionamos o mais próximo
         const distanceFromParent1 =
@@ -171,25 +194,6 @@ class Classe {
             ? parent1NextCity
             : parent2NextCity;
       }
-      // if (
-      //   parent1NextCityIndex < parent1.route.length &&
-      //   !offspringRoute.includes(parent1NextCity)
-      // ) {
-      //   selectedCity = parent1NextCity;
-      // } else if (
-      //   parent2NextCityIndex < parent2.route.length &&
-      //   !offspringRoute.includes(parent2NextCity)
-      // ) {
-      //   selectedCity = parent2NextCity;
-      // } else {
-      //   // Nenhuma cidade legítima é encontrada no pai atual, então examinamos desde o início do pai
-      //   for (let j = 1; j < parent1.route.length; j++) {
-      //     if (!offspringRoute.includes(parent1.route[j])) {
-      //       selectedCity = parent1.route[j];
-      //       break;
-      //     }
-      //   }
-      // }
       if (selectedCity) {
         const distanceFromParent1 =
           this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
@@ -204,32 +208,18 @@ class Classe {
         } else {
           offspringRoute.push(parent2NextCity);
         }
-        const newRouteDistance = this.calculateRouteDistance(offspringRoute);
+        const newRouteDistance =
+          this.tamanhoDaRotaSemRetornoAoDeposito(offspringRoute);
         if (newRouteDistance > Dmax) {
           offspringRoute.pop(); // Remove a última cidade adicionada
           offspringRoute.push(1); // Adiciona o depósito como cidade "fictícia"
         }
       }
-      p = offspringRoute[offspringRoute.length - 1]; // Atualiza a cidade atual
-      console.log({ offspringRoute });
-      console.log({ p });
     }
     return new Chromosome(
       offspringRoute,
-      this.calculateRouteDistance(offspringRoute)
+      this.calculateRouteDistanceGepeto(offspringRoute, this.distanceMatrix)
     );
-  }
-  findClosestCity(currentCity, routes, offspringRoute) {
-    let closestCity;
-    let minDistance = Number.MAX_VALUE;
-    for (const city of routes) {
-      const distance = this.distanceMatrix[currentCity - 1][city - 1];
-      if (distance < minDistance && !offspringRoute.includes(city)) {
-        minDistance = distance;
-        closestCity = city;
-      }
-    }
-    return closestCity;
   }
 }
 class Chromosome {
@@ -238,19 +228,31 @@ class Chromosome {
     this.distance = distance;
   }
 }
-const n = 7; // Total number of cities (sem depósito)
+const n = 8; // Total number of cities (sem depósito)
 const Dmax = 60; // Maximum distance allowed for each route
 const populationSize = 10; // Size of the population
+const numeroDeVeiculos = 2;
 const ronaldo = new Classe();
-const population = ronaldo.generatePopulation(n, Dmax, populationSize);
-console.log({ population });
-const improvedPopulation = ronaldo.improvePopulation(population);
-console.log({ improvedPopulation });
-const parentes = ronaldo.selectParents(2, improvedPopulation);
-console.log({ parentes });
-const parent1 = new Chromosome([1, 2, 4, 8, 3, 6, 5, 7], 75); // Cromossomo do pai 1 (rota do veículo)
-const parent2 = new Chromosome([1, 3, 8, 5, 2, 7, 4, 6], 72); // Cromossomo do pai 2 (rota do veículo)
-console.log({ exemplo: parentes[0] });
-console.log({ parent1 });
-const offspring = ronaldo.generateOffspring(Dmax, parent1, parent2);
-console.log({ offspring });
+// const population = ronaldo.gerarPopulacao(n, Dmax, populationSize);
+// console.log({ population });
+// const improvedPopulation = ronaldo.improvePopulation(population);
+// console.log({ improvedPopulation });
+// const parentes = ronaldo.selectParents(2, improvedPopulation);
+// console.log({ parentes });
+// const parent1 = new Chromosome([1, 2, 4, 8, 3, 6, 5, 7], 75); // Cromossomo do pai 1 (rota do veículo)
+// const parent2 = new Chromosome([1, 3, 8, 5, 2, 7, 4, 6], 72); // Cromossomo do pai 2 (rota do veículo)
+// const offspring = ronaldo.gerarFilhos(Dmax, parent1, parent2);
+// console.log({ offspring });
+const novaMatriz = ronaldo.aumentarMatriz(
+  ronaldo.distanceMatrix,
+  numeroDeVeiculos - 1
+);
+console.log({ novaMatriz });
+const populacoes = ronaldo.gerarPopulacoes(
+  n,
+  Dmax,
+  populationSize,
+  novaMatriz,
+  numeroDeVeiculos
+);
+console.log({ populacoes });
