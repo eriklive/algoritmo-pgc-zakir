@@ -4,9 +4,10 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "tsc main.ts | node main.js"
+    "start": "nodemon main.ts"
   },
   "dependencies": {
+    "nodemon": "^3.0.1",
     "typescript": "^5.1.6"
   }
 }
