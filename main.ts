@@ -96,13 +96,6 @@ class Classe {
       // Volta para o depósito ao final da rota, mas não considera no cálculo de distancia
       route.push(1);
 
-      /**
-       * Coloquei isso apenas para garantir que todos os cromossomos irão usar os dois veículos
-       * e que cada cromossomo terá tamanho igual ao número de cidades + número de veículos
-       */
-      if (dummyCity <= numeroDeCidades + numeroDeVeiculos - 1)
-        route.push(dummyCity);
-
       population.push(new Chromosome(route, ditanciaTotal));
     }
 
