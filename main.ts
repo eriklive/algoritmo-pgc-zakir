@@ -1,5 +1,5 @@
 class Classe {
-  constructor() {}
+  constructor() { }
 
   /**
    * No artigo ele usa "99999" como distancia. Aqui, por algum motivo, ao usar isso,
@@ -281,11 +281,11 @@ class Classe {
         // Ambos os pais têm a cidade, selecionamos o mais próximo
         const distanceFromParent1 =
           this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            parent1NextCity - 1
+          parent1NextCity - 1
           ];
         const distanceFromParent2 =
           this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            parent2NextCity - 1
+          parent2NextCity - 1
           ];
 
         selectedCity =
@@ -297,11 +297,11 @@ class Classe {
       if (selectedCity) {
         const distanceFromParent1 =
           this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            selectedCity - 1
+          selectedCity - 1
           ];
         const distanceFromParent2 =
           this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            parent2NextCity - 1
+          parent2NextCity - 1
           ];
 
         if (distanceFromParent1 < distanceFromParent2) {
@@ -325,11 +325,53 @@ class Classe {
       this.calculateRouteDistanceGepeto(offspringRoute, this.distanceMatrix)
     );
   }
+
+  public calcularFitnessDoCromossomo(cromossomo: Chromosome): number {
+    return 1 / cromossomo.distance;
+  }
+
+  public calcularFitnessDaPopulacao(populacao: Chromosome[]): number {
+    let fitnessPopulacao = 0;
+
+    for (const cromossomo of populacao) {
+      fitnessPopulacao += this.calcularFitnessDoCromossomo(cromossomo);
+    }
+
+    return fitnessPopulacao;
+  }
+
+  public calcularProbabilidadeDeCadaCromossomo(
+    populacao: Chromosome[],
+  ): Chromosome[] {
+    const probPopulacao = this.calcularFitnessDaPopulacao(populacao);
+
+    // iterar cada cromossomo e calcular a probabilidade, sendo ela o fitness do cromossomo dividido pelo fitness da população
+    for (const cromossomo of populacao) {
+      cromossomo.fitness = this.calcularFitnessDoCromossomo(cromossomo) / probPopulacao;
+    }
+
+    return populacao;
+  }
+
+  /**
+    * Input:Ps,Populationofchromosomes.
+    * Output:Newpopulationofchromosomes.
+    */
+  public roletaRussa(tamanhoDaNovaPopulacao: number, populacao: Chromosome): Chromosome[] {
+    // Calculate the fitness fi, probability probi, and then cumulative probability cpi of each chromosome ( 1 ≤ i ≤Ps) of the population.
+    // Notethatcp0 = 0.
+    for (let i = 0; i < tamanhoDaNovaPopulacao; i++) {
+      const cromossomo = populacao[i];
+      const fitness = this.calcularFitnessDoCromossomo(cromossomo);
+
+    }
+  }
 }
 
 class Chromosome {
   route: number[]; // Array representing the route of the vehicle
   distance: number; // Distance of the route
+  fitness: number;
 
   constructor(route: number[], distance: number) {
     this.route = route;
@@ -341,25 +383,25 @@ const n = 7; // Total number of cities (sem depósito)
 const Dmax = 60; // Maximum distance allowed for each route
 const populationSize = 10; // Size of the population
 const numeroDeVeiculos = 2;
-const ronaldo = new Classe();
+const gerador = new Classe();
 
-// const population = ronaldo.gerarPopulacao(n, Dmax, populationSize);
+// const population = gerador.gerarPopulacao(n, Dmax, populationSize);
 
-// const improvedPopulation = ronaldo.improvePopulation(population);
+// const improvedPopulation = gerador.improvePopulation(population);
 
-// const parentes = ronaldo.selectParents(2, improvedPopulation);
+// const parentes = gerador.selectParents(2, improvedPopulation);
 
 // const parent1 = new Chromosome([1, 2, 4, 8, 3, 6, 5, 7], 75); // Cromossomo do pai 1 (rota do veículo)
 // const parent2 = new Chromosome([1, 3, 8, 5, 2, 7, 4, 6], 72); // Cromossomo do pai 2 (rota do veículo)
 
-// const offspring = ronaldo.gerarFilhos(Dmax, parent1, parent2);
+// const offspring = gerador.gerarFilhos(Dmax, parent1, parent2);
 
-const novaMatriz = ronaldo.aumentarMatriz(
-  ronaldo.distanceMatrix,
+const novaMatriz = gerador.aumentarMatriz(
+  gerador.distanceMatrix,
   numeroDeVeiculos - 1
 );
 
-const populacoes = ronaldo.gerarPopulacoes(
+const populacoes = gerador.gerarPopulacoes(
   n,
   Dmax,
   populationSize,
