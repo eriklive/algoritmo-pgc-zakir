@@ -232,7 +232,8 @@ const gerarMelhorSolucao = (numeroDeGeracoes) => {
         subpopulacao[indexPaiUm].route,
         subpopulacao[indexPaiDois].route,
         novaMatriz,
-        n
+        n,
+        2
       );
 
       /**

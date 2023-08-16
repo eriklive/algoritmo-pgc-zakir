@@ -1,11 +1,20 @@
 import { Chromosome } from "../chromossomo.class";
-import { calcularRotaAoGerarPopulacao } from "./calcular_rota";
+import {
+  calcularRotaAoGerarPopulacao,
+  calcularTamanhoDaUltimaSubRota,
+} from "./calcular_rota";
 
 function _acharIndexDaCidadeSeguinte(currentCity: number, route: number[]) {
-  let indexProximaCidade =
-    route.findIndex((cidade) => cidade === currentCity) + 1;
+  let indexDaCidadeAtual = route.findIndex((cidade) => cidade === currentCity);
 
-  if (!indexProximaCidade) {
+  if (indexDaCidadeAtual === -1) {
+    return 0;
+  }
+
+  //
+  const indexProximaCidade = indexDaCidadeAtual + 1;
+
+  if (!!indexProximaCidade) {
     return indexProximaCidade;
   }
 
@@ -14,20 +23,24 @@ function _acharIndexDaCidadeSeguinte(currentCity: number, route: number[]) {
   }
 }
 
-function _acharCidadeSubstituta(
+function _acharIndexDaCidadeSubstituta(
   rota: number[],
   p: number,
   offspringRoute: number[]
 ) {
   const indexDaCidadeSelecionada = rota.findIndex((cidade) => cidade === p);
 
-  if (indexDaCidadeSelecionada + 1 < rota.length) {
-    return rota[p + 1];
+  if (
+    indexDaCidadeSelecionada + 1 < rota.length &&
+    indexDaCidadeSelecionada === rota.length
+  ) {
+    return indexDaCidadeSelecionada + 1;
   }
+
   // acha a primeira cidade na rota que não esteja em offspringRoute
   for (const cidade of rota) {
     if (!offspringRoute.includes(cidade)) {
-      return cidade;
+      return rota.findIndex((cidadeDaRota) => cidade === cidadeDaRota);
     }
   }
 }
@@ -58,6 +71,7 @@ export function gerarFilhos(
   paiDois: number[],
   matrizDeDistancias: number[][],
   numeroDeCidades: number,
+  numeroDeVeiculos: number,
   crossoverProbability: number = 1
 ): Chromosome {
   // numero aleatorio r entre 0 e 1
@@ -68,39 +82,41 @@ export function gerarFilhos(
 
     const offspringRoute: number[] = [1]; // Inicia com o depósito (cidade 1)
 
-    const cidadesLegitimasPaiUm = paiUm;
-    const cidadesLegitimasPaiDois = paiDois;
+    let dummyCity = numeroDeCidades + 1; // Inicia o valor da "dummy city" com o próximo número após o número de clientes (n)
 
-    for (let i = 1; i <= numeroDeCidades - 1; i++) {
-      // In each chromosome consider the first “legitimate” (un-visited) city existed after “city p.”
-      let indexProximaCidadeDoPaiUm = _acharIndexDaCidadeSeguinte(
-        p,
-        cidadesLegitimasPaiUm
-      );
+    for (let i = 1; i <= numeroDeCidades; i++) {
+      let indexProximaCidadeDoPaiUm = _acharIndexDaCidadeSeguinte(p, paiUm);
 
-      let indexProximaCidadeDoPaiDois = _acharIndexDaCidadeSeguinte(
-        p,
-        cidadesLegitimasPaiDois
-      );
+      let indexProximaCidadeDoPaiDois = _acharIndexDaCidadeSeguinte(p, paiDois);
 
-      if (!indexProximaCidadeDoPaiUm || !indexProximaCidadeDoPaiDois) {
-        if (!indexProximaCidadeDoPaiUm) {
-          indexProximaCidadeDoPaiUm = _acharCidadeSubstituta(
-            cidadesLegitimasPaiUm,
+      if (
+        indexProximaCidadeDoPaiUm != 0 &&
+        indexProximaCidadeDoPaiDois != 0 &&
+        (!indexProximaCidadeDoPaiUm ||
+          !indexProximaCidadeDoPaiDois ||
+          indexProximaCidadeDoPaiUm >= paiUm.length ||
+          indexProximaCidadeDoPaiDois >= paiDois.length)
+      ) {
+        if (
+          !indexProximaCidadeDoPaiUm ||
+          indexProximaCidadeDoPaiUm >= paiUm.length
+        ) {
+          indexProximaCidadeDoPaiUm = _acharIndexDaCidadeSubstituta(
+            paiUm,
             p,
             offspringRoute
           );
         } else {
-          indexProximaCidadeDoPaiDois = _acharCidadeSubstituta(
-            cidadesLegitimasPaiDois,
+          indexProximaCidadeDoPaiDois = _acharIndexDaCidadeSubstituta(
+            paiDois,
             p,
             offspringRoute
           );
         }
       }
 
-      const cidadeAlpha = cidadesLegitimasPaiUm[indexProximaCidadeDoPaiUm];
-      const cidadeBeta = cidadesLegitimasPaiDois[indexProximaCidadeDoPaiDois];
+      const cidadeAlpha = paiUm[indexProximaCidadeDoPaiUm];
+      const cidadeBeta = paiDois[indexProximaCidadeDoPaiDois];
 
       const distanciaDePpraAlpha = acharDistanciasEntreCidades(
         p,
@@ -120,16 +136,25 @@ export function gerarFilhos(
         offspringRoute.push(cidadeBeta);
       }
 
-      const newRouteDistance = calcularRotaAoGerarPopulacao(
+      const tamanhoDaUltimaSubRota = calcularTamanhoDaUltimaSubRota(
         offspringRoute,
         matrizDeDistancias,
         numeroDeCidades
       );
 
-      if (newRouteDistance > Dmax) {
+      const ultimaCidadeAdicionada = offspringRoute[offspringRoute.length - 1];
+
+      if (tamanhoDaUltimaSubRota > Dmax) {
         offspringRoute.pop(); // Remove a última cidade adicionada
-        offspringRoute.push(1); // Adiciona o depósito como cidade "fictícia"
+
+        if (dummyCity <= numeroDeCidades + numeroDeVeiculos - 1) {
+          offspringRoute.push(dummyCity);
+          dummyCity++;
+          offspringRoute.push(ultimaCidadeAdicionada);
+        }
       }
+
+      p = ultimaCidadeAdicionada;
     }
 
     return new Chromosome(

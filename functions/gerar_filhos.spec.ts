@@ -1,0 +1,31 @@
+import "jasmine";
+import { aumentarMatriz } from "../main";
+import { gerarFilhos } from "./gerar_filhos";
+
+describe("Gerar filhos", () => {
+  const matrizDeDistancias = () => [
+    [99999, 2, 11, 10, 8, 7, 6],
+    [6, 99999, 1, 8, 8, 4, 6],
+    [5, 12, 99999, 11, 8, 12, 3],
+    [11, 9, 10, 99999, 1, 9, 8],
+    [11, 11, 9, 4, 99999, 2, 10],
+    [12, 8, 5, 2, 11, 99999, 11],
+    [10, 11, 12, 10, 9, 12, 99999],
+  ];
+
+  const matrizAumentada = aumentarMatriz(matrizDeDistancias(), 2);
+
+  it("exemplo", () => expect(0).toBe(0));
+
+  it("Deve gerar um offspring com base no artigo", () => {
+    const offspring = gerarFilhos(
+      60,
+      [1, 2, 4, 8, 3, 6, 5, 7],
+      [1, 3, 8, 5, 2, 7, 4, 6],
+      matrizAumentada,
+      7,
+      2
+    );
+    expect(offspring.route).toEqual([1, 2, 7, 4, 6, 3, 8, 5]);
+  });
+});
