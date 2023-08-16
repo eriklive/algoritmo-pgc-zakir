@@ -1,241 +1,278 @@
-class Classe {
-  constructor() {}
+const matrizDeDistancias = (): number[][] => [
+  [99999, 12, 11, 10, 18, 7, 6],
+  [16, 99999, 10, 8, 8, 4, 6],
+  [15, 12, 99999, 11, 8, 12, 3],
+  [11, 9, 10, 99999, 1, 9, 8],
+  [11, 11, 9, 4, 99999, 2, 10],
+  [12, 8, 5, 2, 11, 99999, 11],
+  [10, 11, 12, 10, 9, 12, 99999],
+];
 
-  public distanceMatrix: number[][] = [
-    [99999, 12, 11, 10, 18, 7, 6],
-    [16, 99999, 10, 8, 8, 4, 6],
-    [15, 12, 99999, 11, 8, 12, 3],
-    [11, 9, 10, 99999, 1, 9, 8],
-    [11, 11, 9, 4, 99999, 2, 10],
-    [12, 8, 5, 2, 11, 99999, 11],
-    [10, 11, 12, 10, 9, 12, 99999],
-  ];
-
-  // Usar esse processo pra combinar tamanho da rota e numero de veículos
-  public aumentarMatriz(matrix: number[][], n: number): number[][] {
-    if (matrix.length === 0 || matrix[0].length === 0 || n <= 0) {
-      return matrix;
-    }
-
-    const numRows = matrix.length;
-
-    // Replicar a primeira coluna "n" vezes e adicionar ao final da matriz
-    for (let i = 0; i < numRows; i++) {
-      for (let j = 0; j < n; j++) {
-        matrix[i].push(matrix[i][0]);
-      }
-    }
-
-    // Replicar a primeira linha "n" vezes e adicionar ao final da matriz
-    for (let i = 0; i < n; i++) {
-      const firstRowCopy = matrix[0].slice();
-      matrix.push(firstRowCopy);
-    }
-
+// Usar esse processo pra combinar tamanho da rota e numero de veículos
+function aumentarMatriz(matrix: number[][], n: number): number[][] {
+  if (matrix.length === 0 || matrix[0].length === 0 || n <= 0) {
     return matrix;
   }
 
-  public gerarPopulacoes(
-    numeroDeCidades: number,
-    Dmax: number,
-    Ps: number,
-    matrizDeDistancias: number[][],
-    numeroDeVeiculos: number
-  ): Chromosome[] {
-    const population: Chromosome[] = [];
+  const numRows = matrix.length;
 
-    for (let i = 0; i < Ps; i++) {
-      const route: number[] = [1]; // Inicia com o depósito (cidade 1)
+  // Replicar a primeira coluna "n" vezes e adicionar ao final da matriz
+  for (let i = 0; i < numRows; i++) {
+    for (let j = 0; j < n; j++) {
+      matrix[i].push(matrix[i][0]);
+    }
+  }
 
-      /**
-       * O filter é necessário para remover o depósito da lista de cidades restantes
-       */
-      const cidadesRestantes = Array.from(
-        { length: numeroDeCidades },
-        (_, i) => i + 1
-      ).filter((cidade) => cidade !== 1);
+  // Replicar a primeira linha "n" vezes e adicionar ao final da matriz
+  for (let i = 0; i < n; i++) {
+    const firstRowCopy = matrix[0].slice();
+    matrix.push(firstRowCopy);
+  }
 
-      let dummyCity = numeroDeCidades + 1; // Inicia o valor da "dummy city" com o próximo número após o número de clientes (n)
+  return matrix;
+}
 
-      for (let j = 2; j <= numeroDeCidades; j++) {
-        const indexAleatorio = Math.floor(
-          Math.random() * cidadesRestantes.length
-        );
+function gerarPopulacoes(
+  numeroDeCidades: number,
+  Dmax: number,
+  Ps: number,
+  matrizDeDistancias: number[][],
+  numeroDeVeiculos: number
+): Chromosome[] {
+  const population: Chromosome[] = [];
 
-        const cidadeSelecionada = cidadesRestantes[indexAleatorio];
-        const distanciaNova = this.calcularRotaAoGerarPopulacao(
-          [...route, cidadeSelecionada],
-          matrizDeDistancias,
-          numeroDeCidades
-        );
+  for (let i = 0; i < Ps; i++) {
+    const route: number[] = [1]; // Inicia com o depósito (cidade 1)
 
-        if (distanciaNova <= Dmax) {
-          route.push(cidadeSelecionada);
-        } else {
-          /**
-           * Verifica se existem "dummy cities" (veículos) disponíveis
-           * para a realização da rota. Aqui há a possibilidade de não existir e a rota
-           * não cobrir todas as cidades
-           */
-          if (dummyCity <= numeroDeCidades + numeroDeVeiculos - 1) {
-            route.push(dummyCity);
-            dummyCity++;
-            route.push(cidadeSelecionada);
-          }
-        }
+    /**
+     * O filter é necessário para remover o depósito da lista de cidades restantes
+     */
+    const cidadesRestantes = Array.from(
+      { length: numeroDeCidades },
+      (_, i) => i + 1
+    ).filter((cidade) => cidade !== 1);
 
-        /**
-         * Caso eu possua um número de cidades muito grande ou um limite de distancia muito pequeno, pode ser que
-         * a cidade seja removido do pool de cidades restantes e não seja colocada na rota.
-         */
-        cidadesRestantes.splice(indexAleatorio, 1);
-      }
+    let dummyCity = numeroDeCidades + 1; // Inicia o valor da "dummy city" com o próximo número após o número de clientes (n)
 
-      const ditanciaTotal = this.calcularRotaAoGerarPopulacao(
-        route,
+    for (let j = 2; j <= numeroDeCidades; j++) {
+      const indexAleatorio = Math.floor(
+        Math.random() * cidadesRestantes.length
+      );
+
+      const cidadeSelecionada = cidadesRestantes[indexAleatorio];
+      const distanciaNova = this.calcularRotaAoGerarPopulacao(
+        [...route, cidadeSelecionada],
         matrizDeDistancias,
         numeroDeCidades
       );
 
-      // Volta para o depósito ao final da rota, mas não considera no cálculo de distancia
-      route.push(1);
-
-      const cromossomo = new Chromosome(route, ditanciaTotal);
-
-      population.push(cromossomo);
-    }
-
-    return population;
-  }
-
-  public calcularRotaAoGerarPopulacao(
-    route: number[],
-    distanceMatrix: number[][],
-    numeroDeCidades: number
-  ): number {
-    let distancia = 0;
-
-    for (let i = 0; i < route.length - 1; i++) {
-      const indexCidadePartida = route[i] - 1;
-      const indexCidadeDestino = route[i + 1] - 1;
-
-      // Se a cidade destino for maior que o número de cidades, não calcular a distancia pois é apenas um veículo adicional
-      if (indexCidadeDestino != numeroDeCidades) {
-        distancia += distanceMatrix[indexCidadePartida][indexCidadeDestino];
+      if (distanciaNova <= Dmax) {
+        route.push(cidadeSelecionada);
+      } else {
+        /**
+         * Verifica se existem "dummy cities" (veículos) disponíveis
+         * para a realização da rota. Aqui há a possibilidade de não existir e a rota
+         * não cobrir todas as cidades
+         */
+        if (dummyCity <= numeroDeCidades + numeroDeVeiculos - 1) {
+          route.push(dummyCity);
+          dummyCity++;
+          route.push(cidadeSelecionada);
+        }
       }
+
+      /**
+       * Caso eu possua um número de cidades muito grande ou um limite de distancia muito pequeno, pode ser que
+       * a cidade seja removido do pool de cidades restantes e não seja colocada na rota.
+       */
+      cidadesRestantes.splice(indexAleatorio, 1);
     }
 
-    return distancia;
+    const ditanciaTotal = this.calcularRotaAoGerarPopulacao(
+      route,
+      matrizDeDistancias,
+      numeroDeCidades
+    );
+
+    // Volta para o depósito ao final da rota, mas não considera no cálculo de distancia
+    route.push(1);
+
+    const cromossomo = new Chromosome(route, ditanciaTotal);
+
+    population.push(cromossomo);
   }
 
-  public acharCidadeSubstituta(
-    currentCity: number,
-    routes: number[],
-    offspringRoute: number[]
-  ): number {
-    let closestCity;
-    let minDistance = Number.MAX_VALUE;
+  return population;
+}
 
-    for (const city of routes) {
-      const distance = this.distanceMatrix[currentCity - 1][city - 1];
+function calcularRotaAoGerarPopulacao(
+  route: number[],
+  distanceMatrix: number[][],
+  numeroDeCidades: number
+): number {
+  let distancia = 0;
 
-      if (distance < minDistance && !offspringRoute.includes(city)) {
-        minDistance = distance;
-        closestCity = city;
-      }
+  for (let i = 0; i < route.length - 1; i++) {
+    const indexCidadePartida = route[i] - 1;
+    const indexCidadeDestino = route[i + 1] - 1;
+
+    // Se a cidade destino for maior que o número de cidades, não calcular a distancia pois é apenas um veículo adicional
+    if (indexCidadeDestino != numeroDeCidades) {
+      distancia += distanceMatrix[indexCidadePartida][indexCidadeDestino];
     }
-
-    return closestCity!;
   }
 
-  /**
-   * 👌
-   */
-  public gerarFilhos(
-    Dmax: number,
-    parent1: Chromosome,
-    parent2: Chromosome,
-    matrizDeDistancias: number[][],
-    numeroDeCidades: number
-  ): Chromosome {
-    const n = parent1.route.length - 1; // Total de cidades (excluindo o depósito)
+  return distancia;
+}
+
+function acharIndexDeCidadeSubstituta(
+  currentCity: number,
+  routes: number[],
+  offspringRoute: number[]
+): number {
+  let closestCity;
+  let minDistance = Number.MAX_VALUE;
+
+  for (const city of routes) {
+    const distance = this.distanceMatrix[currentCity - 1][city - 1];
+
+    if (distance < minDistance && !offspringRoute.includes(city)) {
+      minDistance = distance;
+      closestCity = city;
+    }
+  }
+
+  return closestCity!;
+}
+
+function _acharIndexDaCidadeSeguinte(currentCity: number, route: number[]) {
+  let indexProximaCidade =
+    route.findIndex((cidade) => cidade === currentCity) + 1;
+
+  if (!indexProximaCidade) {
+    return indexProximaCidade;
+  }
+
+  if (indexProximaCidade >= route.length) {
+    return undefined;
+  }
+}
+
+function _acharCidadeSubstituta(
+  rota: number[],
+  p: number,
+  offspringRoute: number[]
+) {
+  const indexDaCidadeSelecionada = rota.findIndex((cidade) => cidade === p);
+
+  if (indexDaCidadeSelecionada + 1 < rota.length) {
+    return rota[p + 1];
+  }
+  // acha a primeira cidade na rota que não esteja em offspringRoute
+  for (const cidade of rota) {
+    if (!offspringRoute.includes(cidade)) {
+      return cidade;
+    }
+  }
+}
+
+/**
+ * Lembrando que a matriz de distancias está ordenada certinho.
+ * Logo, a cidade 1 é a origem e tem posição 0 em qualquer linha e coluna.
+ * Já a cidade 5 tem posição 4 em qualquer linha e coluna e assim por diante.
+ * @param cidadeUm
+ * @param cidadeDois
+ * @param matrizDeDistancias
+ * @returns
+ */
+function acharDistanciasEntreCidades(
+  cidadeUm: number,
+  cidadeDois: number,
+  matrizDeDistancias: number[][]
+): number {
+  return matrizDeDistancias[cidadeUm - 1][cidadeDois - 1];
+}
+
+/**
+ * 👌
+ */
+function gerarFilhos(
+  Dmax: number,
+  paiUm: Chromosome,
+  paiDois: Chromosome,
+  matrizDeDistancias: number[][],
+  numeroDeCidades: number,
+  crossoverProbability: number = 1
+): Chromosome {
+  // numero aleatorio r entre 0 e 1
+  const r = Math.random();
+
+  if (crossoverProbability >= r) {
+    let p = 1; // cidade 1 é a origem
+
     const offspringRoute: number[] = [1]; // Inicia com o depósito (cidade 1)
 
-    for (let i = 2; i <= n; i++) {
-      const parent1NextCityIndex =
-        parent1.route.indexOf(offspringRoute[offspringRoute.length - 1]) + 1;
-      const parent2NextCityIndex =
-        parent2.route.indexOf(offspringRoute[offspringRoute.length - 1]) + 1;
+    const cidadesLegitimasPaiUm = paiUm.route;
+    const cidadesLegitimasPaiDois = paiDois.route;
 
-      let cidadeSelecionada;
+    for (let i = 1; i <= numeroDeCidades - 1; i++) {
+      // In each chromosome consider the first “legitimate” (un-visited) city existed after “city p.”
+      let indexProximaCidadeDoPaiUm = this._acharIndexDaCidadeSeguinte(
+        p,
+        cidadesLegitimasPaiUm
+      );
 
-      let parent1NextCity =
-        parent1NextCityIndex < parent1.route.length
-          ? parent1.route[parent1NextCityIndex]
-          : undefined;
+      let indexProximaCidadeDoPaiDois = this._acharIndexDaCidadeSeguinte(
+        p,
+        cidadesLegitimasPaiDois
+      );
 
-      let parent2NextCity =
-        parent2NextCityIndex < parent2.route.length
-          ? parent2.route[parent2NextCityIndex]
-          : undefined;
-
-      cidadeSelecionada = parent1NextCity || parent2NextCity;
-
-      if (!parent1NextCity || offspringRoute.includes(parent2NextCity)) {
-        parent1NextCity = this.acharCidadeSubstituta(
-          i,
-          parent1.route,
-          offspringRoute
-        );
-      } else if (!parent2NextCity || offspringRoute.includes(parent2NextCity)) {
-        parent2NextCity = this.acharCidadeSubstituta(
-          i,
-          parent2.route,
-          offspringRoute
-        );
-      } else {
-        // Ambos os pais têm a cidade, selecionamos o mais próximo
-        const distanceFromParent1 =
-          this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            parent1NextCity - 1
-          ];
-        const distanceFromParent2 =
-          this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            parent2NextCity - 1
-          ];
-
-        cidadeSelecionada =
-          distanceFromParent1 < distanceFromParent2
-            ? parent1NextCity
-            : parent2NextCity;
+      if (!indexProximaCidadeDoPaiUm || !indexProximaCidadeDoPaiDois) {
+        if (!indexProximaCidadeDoPaiUm) {
+          indexProximaCidadeDoPaiUm = this._acharCidadeSubstituta(
+            cidadesLegitimasPaiUm,
+            p,
+            offspringRoute
+          );
+        } else {
+          indexProximaCidadeDoPaiDois = this._acharCidadeSubstituta(
+            cidadesLegitimasPaiDois,
+            p,
+            offspringRoute
+          );
+        }
       }
 
-      if (cidadeSelecionada) {
-        const distanceFromParent1 =
-          this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            cidadeSelecionada - 1
-          ];
-        const distanceFromParent2 =
-          this.distanceMatrix[offspringRoute[offspringRoute.length - 1] - 1][
-            parent2NextCity - 1
-          ];
+      const cidadeAlpha = cidadesLegitimasPaiUm[indexProximaCidadeDoPaiUm];
+      const cidadeBeta = cidadesLegitimasPaiDois[indexProximaCidadeDoPaiDois];
 
-        if (distanceFromParent1 < distanceFromParent2) {
-          offspringRoute.push(cidadeSelecionada);
-        } else {
-          offspringRoute.push(parent2NextCity);
-        }
+      const distanciaDePpraAlpha = this.acharDistanciasEntreCidades(
+        p,
+        cidadeAlpha,
+        matrizDeDistancias
+      );
 
-        const newRouteDistance = this.calcularRotaAoGerarPopulacao(
-          offspringRoute,
-          matrizDeDistancias,
-          numeroDeCidades
-        );
+      const distanciaDePpraBeta = this.acharDistanciasEntreCidades(
+        p,
+        cidadeBeta,
+        matrizDeDistancias
+      );
 
-        if (newRouteDistance > Dmax) {
-          offspringRoute.pop(); // Remove a última cidade adicionada
-          offspringRoute.push(1); // Adiciona o depósito como cidade "fictícia"
-        }
+      if (distanciaDePpraAlpha < distanciaDePpraBeta) {
+        offspringRoute.push(cidadeAlpha);
+      } else {
+        offspringRoute.push(cidadeBeta);
+      }
+
+      const newRouteDistance = this.calcularRotaAoGerarPopulacao(
+        offspringRoute,
+        matrizDeDistancias,
+        numeroDeCidades
+      );
+
+      if (newRouteDistance > Dmax) {
+        offspringRoute.pop(); // Remove a última cidade adicionada
+        offspringRoute.push(1); // Adiciona o depósito como cidade "fictícia"
       }
     }
 
@@ -248,66 +285,66 @@ class Classe {
       )
     );
   }
+}
 
-  public calcularFitnessDaPopulacao(populacao: Chromosome[]): number {
-    let fitnessPopulacao = 0;
+function calcularFitnessDaPopulacao(populacao: Chromosome[]): number {
+  let fitnessPopulacao = 0;
 
-    for (const cromossomo of populacao) {
-      fitnessPopulacao += cromossomo.fitness;
-    }
-
-    return fitnessPopulacao;
+  for (const cromossomo of populacao) {
+    fitnessPopulacao += cromossomo.fitness;
   }
 
-  public calcularProbabilidades(populacao: Chromosome[]): Chromosome[] {
-    let probAcumulada = 0;
-    const fitnessDaPopulacao = this.calcularFitnessDaPopulacao(populacao);
+  return fitnessPopulacao;
+}
 
-    // iterar cada cromossomo e calcular a probabilidade, sendo ela o fitness do cromossomo dividido pelo fitness da população
-    for (let i = 0; i < populacao.length; i++) {
-      const cromossomo = populacao[i];
+function calcularProbabilidades(populacao: Chromosome[]): Chromosome[] {
+  let probAcumulada = 0;
+  const fitnessDaPopulacao = this.calcularFitnessDaPopulacao(populacao);
 
-      cromossomo.probabilidade = cromossomo.fitness / fitnessDaPopulacao;
-      probAcumulada += cromossomo.probabilidade;
+  // iterar cada cromossomo e calcular a probabilidade, sendo ela o fitness do cromossomo dividido pelo fitness da população
+  for (let i = 0; i < populacao.length; i++) {
+    const cromossomo = populacao[i];
 
-      if (i === 0) {
-        cromossomo.probabilidadeAcumulada = 0;
-      } else {
-        cromossomo.probabilidadeAcumulada = probAcumulada;
+    cromossomo.probabilidade = cromossomo.fitness / fitnessDaPopulacao;
+    probAcumulada += cromossomo.probabilidade;
+
+    if (i === 0) {
+      cromossomo.probabilidadeAcumulada = 0;
+    } else {
+      cromossomo.probabilidadeAcumulada = probAcumulada;
+    }
+  }
+
+  return populacao;
+}
+
+/**
+ * Input:Ps,Populationofchromosomes.
+ * Output:Newpopulationofchromosomes.
+ */
+function roleta(populacao: Chromosome[]): Chromosome[] {
+  // Calculate the fitness fi, probability probi, and then cumulative probability cpi of each chromosome ( 1 ≤ i ≤Ps) of the population.
+  // Note that cp0 = 0.
+  const populacaoComProb = this.calcularProbabilidades(populacao);
+
+  const novaPopulacao = [];
+
+  for (let i = 1; i < populacao.length; i++) {
+    // numero aleatório r entre 0 e 1
+    const r = Math.random();
+
+    for (let j = 1; j < populacao.length; j++) {
+      if (
+        populacaoComProb[j - 1].probabilidadeAcumulada < r &&
+        r <= populacaoComProb[j].probabilidadeAcumulada
+      ) {
+        novaPopulacao.push(populacaoComProb[j]);
+        break;
       }
     }
-
-    return populacao;
   }
 
-  /**
-   * Input:Ps,Populationofchromosomes.
-   * Output:Newpopulationofchromosomes.
-   */
-  public roleta(populacao: Chromosome[]): Chromosome[] {
-    // Calculate the fitness fi, probability probi, and then cumulative probability cpi of each chromosome ( 1 ≤ i ≤Ps) of the population.
-    // Note that cp0 = 0.
-    const populacaoComProb = this.calcularProbabilidades(populacao);
-
-    const novaPopulacao = [];
-
-    for (let i = 1; i < populacao.length; i++) {
-      // numero aleatório r entre 0 e 1
-      const r = Math.random();
-
-      for (let j = 1; j < populacao.length; j++) {
-        if (
-          populacaoComProb[j - 1].probabilidadeAcumulada < r &&
-          r <= populacaoComProb[j].probabilidadeAcumulada
-        ) {
-          novaPopulacao.push(populacaoComProb[j]);
-          break;
-        }
-      }
-    }
-
-    return novaPopulacao;
-  }
+  return novaPopulacao;
 }
 
 class Chromosome {
@@ -363,14 +400,10 @@ const gerarMelhorSolucao = (numeroDeGeracoes) => {
   const Dmax = 60; // Maximum distance allowed for each route
   const populationSize = 10; // Size of the population
   const numeroDeVeiculos = 2;
-  const gerador = new Classe();
 
-  const novaMatriz = gerador.aumentarMatriz(
-    gerador.distanceMatrix,
-    numeroDeVeiculos - 1
-  );
+  const novaMatriz = aumentarMatriz(matrizDeDistancias(), numeroDeVeiculos - 1);
 
-  const geracaoInicial = gerador.gerarPopulacoes(
+  const geracaoInicial = gerarPopulacoes(
     n,
     Dmax,
     populationSize,
@@ -380,19 +413,21 @@ const gerarMelhorSolucao = (numeroDeGeracoes) => {
 
   // evaluate g1 ?????
   let numeroDeGeracoesAposOUltimoUpdate = 0;
-  const melhorSolucao = acharMelhorSolucao(geracaoInicial);
+  let melhorSolucaoGlobal = acharMelhorSolucao(geracaoInicial);
+
+  console.log({ melhorSolucaoGlobal });
 
   for (let i = 0; i < numeroDeGeracoes; i++) {
     /**
      * ESTÁ REPETINDO CIDADES
      */
-    const subpopulacao = gerador.roleta(geracaoInicial);
+    const subpopulacao = roleta(geracaoInicial);
 
     for (let j = 0; j < subpopulacao.length; j++) {
       // gerar dois pais aleatórios e diferentes entre si
       const [indexPaiUm, indexPaiDois] = gerarIndexesPais(subpopulacao.length);
 
-      let prole = gerador.gerarFilhos(
+      let prole = gerarFilhos(
         Dmax,
         subpopulacao[indexPaiUm],
         subpopulacao[indexPaiDois],
@@ -425,17 +460,22 @@ const gerarMelhorSolucao = (numeroDeGeracoes) => {
     }
     //    avaliar gi
     //    bi = melhor populacao em gi
-    //    if (melhorSolucao > bi) {
-    //      melhorSolucao = bi
-    //      numeroDeGeracoesAposOUltimoUpdate = 0
-    //    } else if( numeroDeGeracoesAposOUltimoUpdate > 0.1 * numeroDeGeracoes) {
-    //      aplicar migracao
-    //    } else {
-    //      numeroDeGeracoesAposOUltimoUpdate++;
-    //    }
+    const melhorSolucaoLocal = acharMelhorSolucao(subpopulacao);
+
+    if (melhorSolucaoGlobal.fitness < melhorSolucaoLocal.fitness) {
+      melhorSolucaoGlobal = melhorSolucaoLocal;
+      numeroDeGeracoesAposOUltimoUpdate = 0;
+    }
+    //  else if( numeroDeGeracoesAposOUltimoUpdate > 0.1 * numeroDeGeracoes) {
+    //    aplicar migracao
+    //  } else {
+    //    numeroDeGeracoesAposOUltimoUpdate++;
+    //  }
   }
+
+  console.log({ melhorSolucaoGlobal });
   //
   // return melhorSolucao
 };
 
-gerarMelhorSolucao(1);
+gerarMelhorSolucao(10);
