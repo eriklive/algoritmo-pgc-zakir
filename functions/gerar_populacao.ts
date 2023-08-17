@@ -63,6 +63,18 @@ export function gerarPopulacoes(
       numeroDeCidades
     );
 
+    // preencher cromossomo com dummy cities restantes
+    if (route.length < numeroDeCidades + numeroDeVeiculos - 1) {
+      for (
+        let i = route.length;
+        i < numeroDeCidades + numeroDeVeiculos - 1;
+        i++
+      ) {
+        route.push(dummyCity);
+        dummyCity++;
+      }
+    }
+
     // Volta para o depósito ao final da rota, mas não considera no cálculo de distancia
     route.push(1);
 

@@ -26,6 +26,7 @@ describe("Gerar filhos", () => {
       7,
       2
     );
+
     expect(offspring.route).toEqual([1, 2, 7, 4, 6, 3, 8, 5]);
   });
 });
