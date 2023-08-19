@@ -15,8 +15,6 @@ describe("Gerar filhos", () => {
 
   const matrizAumentada = aumentarMatriz(matrizDeDistancias(), 2);
 
-  it("exemplo", () => expect(0).toBe(0));
-
   it("Deve gerar um offspring com base no artigo", () => {
     const offspring = gerarFilhos(
       60,
@@ -28,5 +26,26 @@ describe("Gerar filhos", () => {
     );
 
     expect(offspring.route).toEqual([1, 2, 7, 4, 6, 3, 8, 5]);
+  });
+
+  it("Deve gerar um corretamente", () => {
+    const testeDoisPaiUm = [
+      1, 6, 2, 5, 7, 4, 3, 8, 1,
+    ];
+
+    const testeDoisPaiDois = [
+      1, 3, 2, 6, 4, 7, 5, 8, 1,
+    ];
+
+    const offspring = gerarFilhos(
+      60,
+      testeDoisPaiUm,
+      testeDoisPaiDois,
+      matrizAumentada,
+      7,
+      2
+    );
+
+    expect(offspring.route).toEqual([1, 6, 4, 7, 5, 3, 8, 2]);
   });
 });

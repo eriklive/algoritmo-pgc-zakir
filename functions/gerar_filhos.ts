@@ -4,19 +4,26 @@ import {
   calcularTamanhoDaUltimaSubRota,
 } from "./calcular_rota";
 
-function _acharIndexDaCidadeSeguinte(currentCity: number, route: number[]) {
+function _acharIndexDaCidadeSeguinte(currentCity: number, route: number[], offspring: number[]) {
   let indexDaCidadeAtual = route.findIndex((cidade) => cidade === currentCity);
 
   if (indexDaCidadeAtual === -1) {
-    return 0;
+    return route.filter(city => !offspring.includes(city))[0];
   }
 
   //
   const indexProximaCidade = indexDaCidadeAtual + 1;
 
+
+  // se o offsprint conter a cidade selecionada, chamar essa func de forma recursiva
+  if (offspring.includes(route[indexProximaCidade])) {
+    return _acharIndexDaCidadeSeguinte(route[indexProximaCidade], route, offspring);
+  }
+
   if (!!indexProximaCidade) {
     return indexProximaCidade;
   }
+
 
   if (indexProximaCidade >= route.length) {
     return undefined;
@@ -85,9 +92,9 @@ export function gerarFilhos(
     let dummyCity = numeroDeCidades + 1; // Inicia o valor da "dummy city" com o próximo número após o número de clientes (n)
 
     for (let i = 1; i <= numeroDeCidades; i++) {
-      let indexProximaCidadeDoPaiUm = _acharIndexDaCidadeSeguinte(p, paiUm);
+      let indexProximaCidadeDoPaiUm = _acharIndexDaCidadeSeguinte(p, paiUm, offspringRoute);
 
-      let indexProximaCidadeDoPaiDois = _acharIndexDaCidadeSeguinte(p, paiDois);
+      let indexProximaCidadeDoPaiDois = _acharIndexDaCidadeSeguinte(p, paiDois, offspringRoute);
 
       if (
         indexProximaCidadeDoPaiUm != 0 &&
