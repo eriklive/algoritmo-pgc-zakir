@@ -155,10 +155,13 @@ const gerarMelhorSolucao = (numeroDeGeracoes) => {
       // gerar dois pais aleatórios e diferentes entre si
       const [indexPaiUm, indexPaiDois] = gerarIndexesPais(subpopulacao.length);
 
+      const paiUm = subpopulacao[indexPaiUm].route;
+      const paiDois =
+        subpopulacao[indexPaiDois].route;
       let prole = gerarFilhos(
         Dmax,
-        subpopulacao[indexPaiUm].route,
-        subpopulacao[indexPaiDois].route,
+        paiUm,
+        paiDois,
         novaMatriz,
         n,
         2
